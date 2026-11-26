@@ -1,0 +1,147 @@
+{
+  "document_sha256": "da2197243b8c84cb3705f1605614138afbf3c9567cb4d9e9413c339f47864eaa",
+  "inventory": {
+    "requirements": [
+      {
+        "id": "R001",
+        "original_id": "R1",
+        "summary": "Для заказа стоимостью от 10000 тенге доставка стоит 0 тенге.",
+        "kind": "functional",
+        "evidence": {
+          "line_start": 2,
+          "line_end": 2,
+          "quote": "R1. Для заказа стоимостью от 10000 тенге доставка стоит 0 тенге."
+        }
+      },
+      {
+        "id": "R002",
+        "original_id": "R2",
+        "summary": "Для любого заказа доставка стоит 1000 тенге.",
+        "kind": "functional",
+        "evidence": {
+          "line_start": 3,
+          "line_end": 3,
+          "quote": "R2. Для любого заказа доставка стоит 1000 тенге."
+        }
+      }
+    ],
+    "limitations": [
+      "Учебная фикстура написана разработчиком; извлечение LLM не выполнялось."
+    ]
+  },
+  "audit": {
+    "findings": [
+      {
+        "id": "F001",
+        "title": "Две цены доставки для одного заказа",
+        "category": "contradiction",
+        "severity": "high",
+        "requirement_ids": [
+          "R001",
+          "R002"
+        ],
+        "evidence": [
+          {
+            "line_start": 2,
+            "line_end": 2,
+            "quote": "R1. Для заказа стоимостью от 10000 тенге доставка стоит 0 тенге."
+          },
+          {
+            "line_start": 3,
+            "line_end": 3,
+            "quote": "R2. Для любого заказа доставка стоит 1000 тенге."
+          }
+        ],
+        "explanation": "Универсальное правило задаёт платную доставку, другое — бесплатную для пересекающегося множества заказов.",
+        "scenario": "Заказ стоит 10000 тенге. По R1 доставка бесплатная, по R2 — 1000 тенге.",
+        "question": "Должно ли R1 быть исключением из R2?",
+        "repair_options": [
+          "Уточнить R2: 1000 тенге только при стоимости ниже 10000.",
+          "Удалить льготу R1, если доставка всегда платная."
+        ]
+      }
+    ],
+    "assessments": [
+      {
+        "requirement_id": "R001",
+        "clarity": "pass",
+        "completeness": "issue",
+        "verifiability": "pass",
+        "atomicity": "pass",
+        "note": "Отдельно понятно, но конфликтует с другим правилом."
+      },
+      {
+        "requirement_id": "R002",
+        "clarity": "pass",
+        "completeness": "issue",
+        "verifiability": "pass",
+        "atomicity": "pass",
+        "note": "Отдельно понятно, но конфликтует с другим правилом."
+      }
+    ],
+    "set_assessment": "Нужно уточнить приоритет правил доставки.",
+    "limitations": [
+      "Синтетический пример не оценивает качество модели на банковском ТЗ."
+    ]
+  },
+  "review": {
+    "decisions": [
+      {
+        "finding_id": "F001",
+        "verdict": "supported",
+        "reason": "Пересечение условий непустое, исключение явно не задано."
+      }
+    ]
+  },
+  "formalizations": {
+    "models": [
+      {
+        "finding_id": "F001",
+        "output_name": "delivery_tenge",
+        "variables": [
+          {
+            "name": "price",
+            "description": "Стоимость заказа в целых тенге",
+            "minimum": 0,
+            "maximum": 1000000
+          }
+        ],
+        "assumptions": [
+          "Сравниваем один заказ и одну услугу доставки.",
+          "R2 не содержит исключения для R1.",
+          "Стоимость заказа ограничена 1000000 тенге для демонстрации."
+        ],
+        "left": {
+          "requirement_id": "R001",
+          "guard": [
+            {
+              "left": {
+                "variable": "price",
+                "offset": 0
+              },
+              "op": "ge",
+              "right": {
+                "variable": null,
+                "offset": 10000
+              }
+            }
+          ],
+          "output": {
+            "variable": null,
+            "offset": 0
+          },
+          "explanation": "Льготная доставка"
+        },
+        "right": {
+          "requirement_id": "R002",
+          "guard": [],
+          "output": {
+            "variable": null,
+            "offset": 1000
+          },
+          "explanation": "Универсальная цена"
+        }
+      }
+    ]
+  }
+}
